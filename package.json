@@ -6,10 +6,17 @@
     "serve": "vite preview"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "prettier": "^2.5.1",
     "prettier-plugin-tailwindcss": "^0.1.5",
     "vitawind": "^2.2.4",
-    "vite": "^2.4.4",
-    "cross-env": "^7.0.3"
+    "vite": "^2.4.4"
+  },
+  "dependencies": {
+    "csv-parser": "^3.0.0",
+    "flowbite": "^1.7.0",
+    "jsbarcode": "^3.11.5",
+    "jspdf": "^2.5.1",
+    "papaparse": "^5.4.1"
   }
 }
