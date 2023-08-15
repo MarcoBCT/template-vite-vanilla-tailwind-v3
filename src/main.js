@@ -4,28 +4,46 @@ import jsPDF from 'jspdf';
 import Papa from 'papaparse';
 import JsBarcode from 'jsbarcode';
 
-const fileUpload = document.getElementById('fileUpload');
-const errorElement = document.getElementById('file_input_errors');
+const fileUploadEAN13 = document.getElementById('fileUploadEAN13');
+const fileUploadCode128 = document.getElementById('fileUploadCode128');
+const errorElementEAN = document.getElementById('file_input_errors_ean13');
+const errorElementCode = document.getElementById('file_input_errors_code128');
 
-fileUpload.addEventListener('change', (e) => {
-  const file = fileUpload.files[0];
+fileUploadEAN13.addEventListener('change', (e) => {
+  const file = fileUploadEAN13.files[0];
 
   if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
     const fileReader = new FileReader();
 
     fileReader.onload = function (event) {
       const content = event.target.result;
-      parseCSV(content);
+      parseCSV(content, 'EAN13');
     };
 
     fileReader.readAsText(file);
   } else {
-    errorElement.innerHTML = 'The uploaded file must be a CSV.';
+    errorElementEAN.innerHTML = 'The uploaded file must be a CSV.';
   }
-
 });
 
-function parseCSV(content) {
+fileUploadCode128.addEventListener('change', (e) => {
+  const file = fileUploadCode128.files[0];
+
+  if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+    const fileReader = new FileReader();
+
+    fileReader.onload = function (event) {
+      const content = event.target.result;
+      parseCSV(content, 'CODE128');
+    };
+
+    fileReader.readAsText(file);
+  } else {
+    errorElementCode.innerHTML = 'The uploaded file must be a CSV.';
+  }
+});
+
+function parseCSV(content, barcodeFormat) {
   Papa.parse(content, {
     skipEmptyLines: 'greedy',
     complete: function (results) {
@@ -34,7 +52,7 @@ function parseCSV(content) {
       if (errors.length === 0) {
         // If there are no errors, create the PDF
         results.data.shift();
-        createPDF(results.data);
+        createPDF(results.data, barcodeFormat);
       } else {
         errorElement.innerHTML = errors.join('<br>');
       }
@@ -59,8 +77,20 @@ const validateCSVData = data => {
   return errors;
 }
 
+const generateBarcodeImage = (barcodeValue, barcodeHeight, barcodeFormat) => {
+  const canvas = document.createElement('canvas');
+  JsBarcode(canvas, barcodeValue, {
+    format: barcodeFormat,
+    width: 2,
+    height: barcodeHeight,
+    fontSize: 24,
+    flat: true,
+    displayValue: false
+  });
+  return canvas.toDataURL('image/png');
+};
 
-const createPDF = data => {
+const createPDF = (data, barcodeFormat = 'EAN13') => {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
@@ -71,7 +101,7 @@ const createPDF = data => {
   const yMargin = 10;
   const barcodeWidth = 50;
   const barcodeHeight = 20;
-  const fontSize = 12;
+  const fontSize = 11;
   const pageHeight = doc.internal.pageSize.getHeight();
 
   data.forEach((row, index) => {
@@ -82,21 +112,20 @@ const createPDF = data => {
     const productName = row[0]; // Assuming the product name is in the second column of each row
     const barcodeValue = row[1]; // Assuming the barcode value is in the first column of each row
 
-
     const x = xMargin;
     const y = yMargin;
 
-    const canvas = document.createElement('canvas');
-    JsBarcode(canvas, barcodeValue, {
-      format: 'EAN13',
-      width: 2,
-      height: barcodeHeight,
-      fontSize: 24,
-      flat: true,
-      displayValue: false
-    });
-
-    const imageData = canvas.toDataURL('image/png');
+    // const canvas = document.createElement('canvas');
+    const imageData = generateBarcodeImage(barcodeValue, barcodeHeight, barcodeFormat);
+    // JsBarcode(canvas, barcodeValue, {
+    //   format: 'EAN13',
+    //   width: 2,
+    //   height: barcodeHeight,
+    //   fontSize: 24,
+    //   flat: true,
+    //   displayValue: false
+    // });
+    // const imageData = canvas.toDataURL('image/png');
     doc.addImage(imageData, 'PNG', x, y, barcodeWidth, barcodeHeight);
 
     // Add the barcode value underneath the barcode
